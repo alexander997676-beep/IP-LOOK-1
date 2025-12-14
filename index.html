@@ -3,344 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My IP Dashboard</title>
-    <!-- Icons (FontAwesome) -->
+    <title>IP Address Finder</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Map CSS (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        /* CSS Variables for Dark/Light Mode */
-        :root {
-            --primary: #2563eb;       /* Blue */
-            --bg-color: #f1f5f9;      /* Light Gray */
-            --card-bg: #ffffff;       /* White */
-            --text-main: #1e293b;     /* Dark Text */
-            --text-sub: #64748b;      /* Grey Text */
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        [data-theme="dark"] {
-            --primary: #3b82f6;
-            --bg-color: #0f172a;      /* Dark Blue/Black */
-            --card-bg: #1e293b;       /* Dark Grey */
-            --text-main: #f8fafc;     /* White Text */
-            --text-sub: #94a3b8;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; transition: all 0.3s ease; }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f1f5f9;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            margin: 0;
             padding: 20px;
         }
 
-        .dashboard {
+        .card {
+            background: white;
             width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
+            max-width: 500px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             overflow: hidden;
-            position: relative;
         }
 
-        /* Header Area */
-        .header {
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
-            padding: 40px;
+        .search-area {
+            background: #4f46e5;
+            padding: 30px;
             text-align: center;
-            color: white;
-            position: relative;
         }
 
-        .theme-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .search-box {
+            display: flex;
             background: rgba(255,255,255,0.2);
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
             border: none;
             color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
+            padding: 10px;
+            outline: none;
+            font-size: 1rem;
         }
-        .theme-btn:hover { background: rgba(255,255,255,0.3); }
+        input::placeholder { color: rgba(255,255,255,0.7); }
 
-        .ip-wrapper {
-            margin-top: 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(0,0,0,0.1);
+        button {
+            background: white;
+            color: #4f46e5;
+            border: none;
             padding: 10px 20px;
-            border-radius: 12px;
-        }
-
-        #ip-address {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        .copy-icon {
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1.2rem;
-            opacity: 0.8;
+            font-weight: bold;
+            transition: 0.2s;
         }
-        .copy-icon:hover { opacity: 1; transform: scale(1.1); }
+        button:hover { background: #e0e7ff; }
 
-        .location-text {
-            margin-top: 10px;
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        /* Loading Spinner */
-        #loader {
+        .result-area {
             padding: 20px;
-            font-size: 1.2rem;
         }
 
-        /* Grid Layout */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-
-        .info-box {
-            background-color: var(--bg-color);
-            padding: 20px;
-            border-radius: 16px;
+        .info-row {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
-            border: 1px solid rgba(0,0,0,0.05);
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
         }
+        .info-row:last-child { border-bottom: none; }
 
-        .box-label {
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        .label { color: #64748b; font-size: 0.9rem; }
+        .val { font-weight: 600; color: #1e293b; text-align: right;}
 
-        .box-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .flag-icon { width: 28px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-        /* Map */
-        #map-container {
-            height: 350px;
+        #map {
+            height: 250px;
             width: 100%;
-            z-index: 1;
         }
-
-        /* Error Message */
-        .error-msg {
-            display: none;
-            color: #ef4444;
-            padding: 20px;
-            text-align: center;
-            background: #fef2f2;
-        }
-
-        @media (max-width: 600px) {
-            #ip-address { font-size: 1.5rem; }
-            .header { padding: 30px 20px; }
-            .info-grid { grid-template-columns: 1fr; }
-        }
+        
+        .error { color: red; text-align: center; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <!-- Header -->
-        <div class="header">
-            <button class="theme-btn" onclick="toggleTheme()" title="Switch Theme">
-                <i class="fas fa-moon"></i>
-            </button>
-            
-            <div id="loader">
-                <i class="fas fa-spinner fa-spin"></i> Fetching your data...
+    <div class="card">
+        <div class="search-area">
+            <h2 style="color:white; margin-bottom:15px;">IP Lookup</h2>
+            <div class="search-box">
+                <input type="text" id="ipInput" placeholder="Enter IP (e.g. 8.8.8.8)">
+                <button onclick="searchIP()">Search</button>
             </div>
-
-            <div id="header-content" style="display: none;">
-                <div class="ip-wrapper">
-                    <span id="ip-address">--</span>
-                    <i class="far fa-copy copy-icon" onclick="copyToClipboard()" title="Copy IP"></i>
-                </div>
-                <div class="location-text">
-                    <i class="fas fa-map-pin"></i> <span id="full-location">Locating...</span>
-                </div>
-            </div>
+            <p id="error-msg" class="error"></p>
         </div>
 
-        <!-- Error Section -->
-        <div id="error-area" class="error-msg">
-            <strong>Error:</strong> Could not fetch data. Please disable AdBlocker and refresh.
-        </div>
+        <div id="map"></div>
 
-        <!-- Information Grid -->
-        <div class="info-grid" id="details-area" style="opacity: 0.5; pointer-events: none;">
-            
-            <!-- Country Code -->
-            <div class="info-box">
-                <span class="box-label">Calling Code</span>
-                <span class="box-value">
-                    <i class="fas fa-phone text-blue-500"></i>
-                    <span id="call-code">--</span>
+        <div class="result-area">
+            <div class="info-row">
+                <span class="label">IP Address</span>
+                <span class="val" id="res-ip">--</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Country</span>
+                <span class="val">
+                    <img id="flag" src="" width="20" style="vertical-align:middle; display:none;"> 
+                    <span id="res-country">--</span>
                 </span>
             </div>
-
-            <!-- Country Name -->
-            <div class="info-box">
-                <span class="box-label">Country</span>
-                <span class="box-value">
-                    <img id="flag-img" class="flag-icon" src="" alt="" style="display:none">
-                    <span id="country-name">--</span>
-                </span>
+            <div class="info-row">
+                <span class="label">City</span>
+                <span class="val" id="res-city">--</span>
             </div>
-
-            <!-- Postal Code -->
-            <div class="info-box">
-                <span class="box-label">Zip / Postal Code</span>
-                <span class="box-value">
-                    <i class="fas fa-envelope"></i>
-                    <span id="zip-code">--</span>
-                </span>
+            <div class="info-row">
+                <span class="label">Calling Code</span>
+                <span class="val" id="res-code">--</span>
             </div>
-
-            <!-- ISP -->
-            <div class="info-box">
-                <span class="box-label">Internet Provider (ISP)</span>
-                <span class="box-value">
-                    <i class="fas fa-wifi"></i>
-                    <span id="isp-name" style="font-size: 1rem;">--</span>
-                </span>
-            </div>
-
-            <!-- Timezone -->
-            <div class="info-box">
-                <span class="box-label">Timezone</span>
-                <span class="box-value">
-                    <i class="far fa-clock"></i>
-                    <span id="timezone">--</span>
-                </span>
-            </div>
-
-            <!-- Currency -->
-            <div class="info-box">
-                <span class="box-label">Currency</span>
-                <span class="box-value">
-                    <i class="fas fa-coins"></i>
-                    <span id="currency">--</span>
-                </span>
+            <div class="info-row">
+                <span class="label">ISP / Org</span>
+                <span class="val" id="res-isp">--</span>
             </div>
         </div>
-
-        <!-- Map -->
-        <div id="map-container"></div>
     </div>
 
-    <!-- Leaflet JS for Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        // 1. Theme Logic
-        function toggleTheme() {
-            const body = document.body;
-            const icon = document.querySelector('.theme-btn i');
-            
-            if (body.getAttribute('data-theme') === 'dark') {
-                body.removeAttribute('data-theme');
-                icon.className = 'fas fa-moon';
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                icon.className = 'fas fa-sun';
-            }
+        let map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let marker;
+
+        // Auto-fetch user IP on load
+        fetchIP('');
+
+        function searchIP() {
+            const input = document.getElementById('ipInput').value;
+            fetchIP(input);
         }
 
-        // 2. Copy Logic
-        function copyToClipboard() {
-            const ip = document.getElementById('ip-address').innerText;
-            navigator.clipboard.writeText(ip);
+        function fetchIP(ip) {
+            // Using ipwho.is which supports querying specific IPs (e.g., ipwho.is/8.8.8.8)
+            const url = `https://ipwho.is/${ip}`;
+            const errorMsg = document.getElementById('error-msg');
             
-            const icon = document.querySelector('.copy-icon');
-            icon.className = 'fas fa-check'; // Show checkmark
-            setTimeout(() => {
-                icon.className = 'far fa-copy'; // Revert back
-            }, 2000);
-        }
+            errorMsg.style.display = 'none';
 
-        // 3. Fetch Data & Update UI
-        window.addEventListener('load', () => {
-            const apiURL = 'https://ipapi.co/json/';
-
-            fetch(apiURL)
-                .then(response => {
-                    if (!response.ok) throw new Error("Network response was not ok");
-                    return response.json();
-                })
+            fetch(url)
+                .then(res => res.json())
                 .then(data => {
-                    // Hide Loader, Show Content
-                    document.getElementById('loader').style.display = 'none';
-                    document.getElementById('header-content').style.display = 'block';
-                    document.getElementById('details-area').style.opacity = '1';
-                    document.getElementById('details-area').style.pointerEvents = 'auto';
+                    if(!data.success) {
+                        errorMsg.textContent = "Invalid IP Address";
+                        errorMsg.style.display = 'block';
+                        return;
+                    }
 
-                    // Update Text Fields
-                    document.getElementById('ip-address').innerText = data.ip;
-                    document.getElementById('full-location').innerText = `${data.city}, ${data.region}`;
-                    document.getElementById('call-code').innerText = data.country_calling_code; // e.g., +92
-                    document.getElementById('country-name').innerText = data.country_name;
-                    document.getElementById('zip-code').innerText = data.postal || 'N/A';
-                    document.getElementById('isp-name').innerText = data.org;
-                    document.getElementById('timezone').innerText = data.timezone;
-                    document.getElementById('currency').innerText = data.currency;
+                    // Update UI
+                    document.getElementById('res-ip').textContent = data.ip;
+                    document.getElementById('res-country').textContent = data.country;
+                    document.getElementById('res-city').textContent = data.city;
+                    document.getElementById('res-code').textContent = "+" + data.calling_code;
+                    document.getElementById('res-isp').textContent = data.connection.org || data.connection.isp;
 
                     // Update Flag
-                    const flag = document.getElementById('flag-img');
-                    flag.src = `https://flagcdn.com/w40/${data.country_code.toLowerCase()}.png`;
-                    flag.style.display = 'block';
+                    const flag = document.getElementById('flag');
+                    flag.src = data.flag.img;
+                    flag.style.display = 'inline-block';
 
-                    // Initialize Map
+                    // Update Map
                     if(data.latitude && data.longitude) {
-                        const map = L.map('map-container').setView([data.latitude, data.longitude], 13);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '© OpenStreetMap'
-                        }).addTo(map);
-
-                        L.marker([data.latitude, data.longitude]).addTo(map)
-                            .bindPopup(`<b>${data.city}</b><br>IP Location`)
-                            .openPopup();
+                        const lat = data.latitude;
+                        const lng = data.longitude;
+                        
+                        map.setView([lat, lng], 13);
+                        
+                        if(marker) map.removeLayer(marker);
+                        marker = L.marker([lat, lng]).addTo(map)
+                            .bindPopup(`<b>${data.city}</b><br>${data.country}`).openPopup();
                     }
                 })
-                .catch(error => {
-                    console.error("Error fetching IP:", error);
-                    document.getElementById('loader').style.display = 'none';
-                    document.getElementById('error-area').style.display = 'block';
-                    document.getElementById('error-area').innerText = "Failed to load data. If you are using an AdBlocker, please disable it for this page.";
+                .catch(err => {
+                    errorMsg.textContent = "Network Error";
+                    errorMsg.style.display = 'block';
                 });
-        });
+        }
     </script>
 </body>
 </html>
